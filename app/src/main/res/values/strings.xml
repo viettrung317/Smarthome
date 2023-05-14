@@ -1,0 +1,13 @@
+<resources>
+    <string name="app_name">SmartHome</string>
+    <string name="send">Send</string>
+    <string name="todo">TODO</string>
+    <string name="provide_your_account_s_email_for_which_you_want_to_reset_your_password">Provide your account\'s email for which you want to reset your password!</string>
+    <string name="forgot_password">Forgot password</string>
+    <string name="smarthome_t_v"><![CDATA[SmartHome T&V]]></string>
+    <string name="remember_me">Remember me</string>
+    <string name="home">HOME</string>
+    <string name="profile">PROFILE</string>
+    <!-- TODO: Remove or change this placeholder text -->
+    <string name="hello_blank_fragment">Hello blank fragment</string>
+</resources>
