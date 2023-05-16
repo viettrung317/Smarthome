@@ -8,7 +8,11 @@ import android.content.Context;
 import android.os.Bundle;
 
 import androidx.annotation.NonNull;
+import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.CompositePageTransformer;
 import androidx.viewpager2.widget.MarginPageTransformer;
 import androidx.viewpager2.widget.ViewPager2;
@@ -28,6 +32,7 @@ import com.example.smarthome.Model.Home;
 import com.example.smarthome.Model.Room;
 import com.example.smarthome.Model.User;
 import com.example.smarthome.R;
+import com.example.smarthome.ViewModel.UserViewModel;
 import com.example.smarthome.databinding.FragmentHomeBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
@@ -51,7 +56,7 @@ public class HomeFragment extends Fragment {
     }
     private IsendData mIsendData;
     public interface IsendData{
-        void sendData(Home home,int position);
+        void sendData(int position);
     }
 
     private RoomAdapter roomAdapter;
@@ -64,14 +69,24 @@ public class HomeFragment extends Fragment {
     private User user=new User();
     private SelectHomeAdapter selectHomeAdapter;
     private MainActivity mainActivity;
+    private UserViewModel mViewModel; // Khai báo UserViewModel
+
+    @Override
+    public void onCreate(@Nullable Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        ViewModelProvider viewModelProvider=new ViewModelProvider(requireActivity());
+        mViewModel = viewModelProvider.get(UserViewModel.class);
+    }
+
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
                              Bundle savedInstanceState) {
         // Inflate the layout for this fragment
         binding=FragmentHomeBinding.inflate(inflater, container, false);
-        mainActivity=(MainActivity) getActivity();
-        getData();
-        lvDataAdd();
+        if(getActivity()!=null) {
+            //mainActivity = (MainActivity) getActivity();
+            getData();
+        }
         addEvents();
         return binding.getRoot();
     }
@@ -91,6 +106,7 @@ public class HomeFragment extends Fragment {
                 mHome=selectHomeAdapter.getItem(position);
                 resetListHome(listHome,mHome);
                 getHome();
+                lvDataAdd();
             }
 
             @Override
@@ -119,11 +135,20 @@ public class HomeFragment extends Fragment {
     }
 
     private void getData() {
-        user=mainActivity.getUser();
-        assert user != null;
-        binding.txtUserName.setText(user.getUserName());
-        listHome=user.getHomeList();
-        selectHome();
+        mViewModel.getMyData().observe(getViewLifecycleOwner(), new Observer<User>() {
+            @Override
+            public void onChanged(User userData) {
+                // Xử lý cập nhật dữ liệu mới nhất từ server vào Fragment
+                user=userData;
+                assert user != null;
+                binding.txtUserName.setText(user.getUserName());
+                if(listHome!=null) {
+                    listHome = user.getHomeList();
+                    selectHome();
+                }
+            }
+        });
+
     }
     private void addEvents() {
         binding.btnAdd.setOnClickListener(new View.OnClickListener() {
@@ -138,16 +163,49 @@ public class HomeFragment extends Fragment {
                 binding.lvAdd.setVisibility(View.GONE);
                 switch (position) {
                     case 0:
+                        if(mHome.getStatusGate()==null){
+                            addGate(false);
+                        }else{
+                            deleteGate();
+                        }
+                        break;
+                    case 1:
                         openDialogaddRoom();
                         break;
                 }
+            }
+
+            private void deleteGate() {
+                ref.child(userUid).child("homeList").child("0").child("statusGate").removeValue().addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            binding.swGateHome.setVisibility(View.GONE);
+                        }
+                    }
+                });
             }
         });
         binding.swGateHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(mHome.getStatusGate()==false){
+                if(mHome.getStatusGate()){
+                    mHome.setStatusGate(false);
+                }else{
+                    mHome.setStatusGate(true);
+                }
+                addGate(mHome.getStatusGate());
+            }
+        });
+    }
 
+    private void addGate(boolean b) {
+        mHome.setStatusGate(b);
+        ref.child(userUid).child("homeList").child("0").updateChildren(mHome.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+            @Override
+            public void onComplete(@NonNull Task<Void> task) {
+                if(task.isSuccessful()){
+                    binding.swGateHome.setVisibility(View.VISIBLE);
                 }
             }
         });
@@ -171,8 +229,13 @@ public class HomeFragment extends Fragment {
 
     private List<DataAdd> getListAdd() {
         listData=new ArrayList<>();
+        if(mHome.getStatusGate()!=null){
+            listData.add(new DataAdd("Xóa cổng",R.drawable.ic_baseline_delete_24));
+        }else{
+            listData.add(new DataAdd("Thêm cổng",R.drawable.room_24));
+        }
         listData.add(new DataAdd("Thêm phòng",R.drawable.room_24));
-        listData.add(new DataAdd("Thêm thành viên",R.drawable.member_24));
+        listData.add(new DataAdd("Xóa nhà",R.drawable.ic_baseline_delete_24));
         return listData;
     }
 
@@ -193,8 +256,7 @@ public class HomeFragment extends Fragment {
                 page.setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
-                        Room room=listRoom.get(positionlist);
-                        mIsendData.sendData(mHome,positionlist);
+                        mIsendData.sendData(positionlist);
                     }
                 });
             }
@@ -209,8 +271,14 @@ public class HomeFragment extends Fragment {
                 positionlist=position;
             }
         });
-        Picasso.with(getContext()).load(mHome.getImageHome()).into(binding.imgHomeLayout);
-        binding.swGateHome.setChecked(mHome.getStatusGate());
+        if(mHome.getImageHome()!=null) {
+            Picasso.with(getContext()).load(mHome.getImageHome()).into(binding.imgHomeLayout);
+        }
+        if(mHome.getStatusGate()!=null) {
+            binding.swGateHome.setChecked(mHome.getStatusGate());
+        }else{
+            binding.swGateHome.setVisibility(View.GONE);
+        }
 
     }
 }

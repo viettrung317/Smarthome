@@ -7,6 +7,9 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.view.WindowManager;
 
+import com.example.smarthome.Account.LoginActivity;
+import com.example.smarthome.Account.SignUpActivity;
+
 public class OnboardingActivity extends AppCompatActivity {
 
     @Override
@@ -17,7 +20,7 @@ public class OnboardingActivity extends AppCompatActivity {
         new Handler().postDelayed(new Runnable() {
             @Override
             public void run() {
-                Intent intent=new Intent(OnboardingActivity.this,MainActivity.class);
+                Intent intent=new Intent(OnboardingActivity.this, MainActivity.class);
                 startActivity(intent);
                 finish();
             }

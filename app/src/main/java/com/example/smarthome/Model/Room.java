@@ -7,6 +7,7 @@ import java.util.*;
 
 public class Room implements Serializable {
     private String roomName,imgRoom;
+    private Boolean door;
     private List<Device> listDevice;
     private List<Sensor> sensorList;
     public Map<String, Boolean> stars = new HashMap<>();
@@ -14,9 +15,10 @@ public class Room implements Serializable {
     public Room() {
     }
 
-    public Room(String roomName, String imgRoom, List<Device> listDevice, List<Sensor> sensorList) {
+    public Room(String roomName, String imgRoom,Boolean door, List<Device> listDevice, List<Sensor> sensorList) {
         this.roomName = roomName;
         this.imgRoom = imgRoom;
+        this.door=door;
         this.listDevice = listDevice;
         this.sensorList = sensorList;
     }
@@ -35,6 +37,14 @@ public class Room implements Serializable {
 
     public void setImgRoom(String imgRoom) {
         this.imgRoom = imgRoom;
+    }
+
+    public Boolean getDoor() {
+        return door;
+    }
+
+    public void setDoor(Boolean door) {
+        this.door = door;
     }
 
     public List<Device> getListDevice() {
@@ -57,6 +67,7 @@ public class Room implements Serializable {
         HashMap<String, Object> result = new HashMap<>();
         result.put("roomName",roomName);
         result.put("imgRoom",imgRoom);
+        result.put("door",door);
         result.put("listDevice",listDevice);
         result.put("sensorList",sensorList);
         result.put("stars", stars);

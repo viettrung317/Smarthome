@@ -7,20 +7,18 @@ public class Home implements Serializable {
     private String nameHome,imageHome,passGateHome;
     private Boolean statusGate;
     private List<Room> roomList;
-    private List<User> userList;
     public Map<String, Boolean> stars = new HashMap<>();
 
 
     public Home() {
     }
 
-    public Home(String nameHome, String imageHome, String passGateHome, Boolean statusGate, List<Room> roomList, List<User> userList) {
+    public Home(String nameHome, String imageHome, String passGateHome, Boolean statusGate, List<Room> roomList) {
         this.nameHome = nameHome;
         this.imageHome = imageHome;
         this.passGateHome = passGateHome;
         this.statusGate = statusGate;
         this.roomList = roomList;
-        this.userList = userList;
     }
 
     public String getNameHome() {
@@ -63,13 +61,6 @@ public class Home implements Serializable {
         this.roomList = roomList;
     }
 
-    public List<User> getUserList() {
-        return userList;
-    }
-
-    public void setUserList(List<User> userList) {
-        this.userList = userList;
-    }
 
 
     @Exclude
@@ -80,7 +71,6 @@ public class Home implements Serializable {
         result.put("passGateHome",passGateHome);
         result.put("statusGate",statusGate);
         result.put("roomList",roomList);
-        result.put("userList",userList);
         result.put("stars", stars);
         return result;
     }

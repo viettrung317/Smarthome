@@ -3,11 +3,17 @@ package com.example.smarthome;
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.fragment.app.Fragment;
+import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
+import androidx.lifecycle.LiveData;
+import androidx.lifecycle.Observer;
+import androidx.lifecycle.ViewModel;
+import androidx.lifecycle.ViewModelProvider;
 
-import android.app.FragmentManager;
 import android.content.Intent;
+import android.os.Build;
 import android.os.Bundle;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -21,6 +27,7 @@ import com.example.smarthome.Model.Device;
 import com.example.smarthome.Model.Home;
 import com.example.smarthome.Model.Room;
 import com.example.smarthome.Model.User;
+import com.example.smarthome.ViewModel.UserViewModel;
 import com.google.android.material.bottomnavigation.BottomNavigationView;
 import com.google.android.material.navigation.NavigationBarView;
 import com.google.firebase.auth.FirebaseAuth;
@@ -49,33 +56,27 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.Isen
         userUid = fbuser.getUid();
     }
     private User user=new User();
+    private UserViewModel userViewModel;
+    private LiveData<User> userData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        addData();
+        userViewModel= new ViewModelProvider(this).get(UserViewModel.class);
+        userViewModel.getMyData().observe(this, new Observer<User>() {
+            @Override
+            public void onChanged(User data) {
+                user=data;
+                assert user != null;
+                replaceFragment(new HomeFragment());
+            }
+        });
         addControls();
         addEvents();
     }
-    private void addData() {
-        ref.child(userUid).addValueEventListener(new ValueEventListener() {
-            @Override
-            public void onDataChange(@NonNull DataSnapshot snapshot) {
-                user=snapshot.getValue(User.class);
-                assert user != null;
-                replaceFragment(new HomeFragment());
-
-            }
-
-            @Override
-            public void onCancelled(@NonNull DatabaseError error) {
-
-            }
-        });
-    }
-    public User getUser(){
-        return user;
+    public LiveData<User> getUser(){
+        return userData;
     }
 
     private void addEvents() {
@@ -96,9 +97,20 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.Isen
         });
     }
     private void replaceFragment(Fragment fragment){
-        FragmentTransaction fragmentTransaction=getSupportFragmentManager().beginTransaction();
-        fragmentTransaction.replace(R.id.fragmentlayout,fragment);
+        FragmentTransaction fragmentTransaction = getSupportFragmentManager().beginTransaction();
+        // Ẩn tất cả các Fragment đang hiển thị
+        for (Fragment f : getSupportFragmentManager().getFragments()) {
+            fragmentTransaction.hide(f);
+        }
+        // Kiểm tra nếu Fragment đã được thêm vào trước đó
+        if (fragment.isAdded()) {
+            fragmentTransaction.show(fragment);
+        } else {
+            fragmentTransaction.add(R.id.fragmentlayout, fragment);
+            fragmentTransaction.show(fragment);
+        }
         fragmentTransaction.commit();
+
     }
     private void addControls() {
         bottomNavigationView=(BottomNavigationView) findViewById(R.id.bottomNavigationView);
@@ -127,19 +139,47 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.Isen
         }
         backPressedTime=System.currentTimeMillis();
     }
+    public void sendData(int position) {
+        FragmentManager fm = getSupportFragmentManager();
+        RoomFragment roomFragment = null;
+        Log.d("RoomFragment", "Duyệt danh sách các Fragment đã attach");
+        // Duyệt qua danh sách các Fragment đã attach và tìm Fragment có tag RoomFragment.TAG
+        List<Fragment> fragments = fm.getFragments();
+        if (fragments != null) {
+            for (Fragment fragment : fragments) {
+                if (fragment instanceof RoomFragment && fragment.getTag().equals(RoomFragment.TAG)) {
+                    roomFragment = (RoomFragment) fragment;
+                    break;
+                }
+            }
+        }
+
+        if (roomFragment == null) {
+            // Nếu không tìm thấy Fragment, tạo mới Fragment
+            roomFragment = RoomFragment.newInstance(position);
+            FragmentTransaction fragmentTransaction = fm.beginTransaction();
+            // Ẩn tất cả các Fragment đang hiển thị
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                for (Fragment f : fragments) {
+                    fragmentTransaction.hide(f);
+                }
+            }
+            fragmentTransaction.add(R.id.fragmentlayout, roomFragment, RoomFragment.TAG);
+            fragmentTransaction.addToBackStack(null);
+            fragmentTransaction.commit();
+            Log.d("RoomFragment", "Tạo mới Fragment RoomFragment");
+        } else {
+            // Nếu Fragment đã tồn tại, cập nhật dữ liệu
+            roomFragment.updateData(position);
+            Log.d("RoomFragment", "Cập nhật dữ liệu vào Fragment");
+        }
+    }
+
+
 
     @Override
-    public void sendData(Home home,int positionRoom) {
-        FragmentTransaction fragmentTransaction=getSupportFragmentManager().beginTransaction();
-        RoomFragment roomFragment=new RoomFragment();
-        Bundle bundle=new Bundle();
-        bundle.putInt("position",positionRoom);
-        bundle.putSerializable("home",home);
-        roomFragment.setArguments(bundle);
-        fragmentTransaction.replace(R.id.fragmentlayout,roomFragment);
-        //fragmentTransaction.addToBackStack(null);
-        fragmentTransaction.addToBackStack(RoomFragment.TAG);
-        fragmentTransaction.commit();
-
+    protected void onStop() {
+        super.onStop();
+        userViewModel.getMyData().removeObservers(this);
     }
 }
