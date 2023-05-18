@@ -91,6 +91,7 @@ public class ProfileFragment extends Fragment {
             public void onClick(View view) {
                 mAuth.signOut();
                 startActivity(new Intent(getActivity(), LoginActivity.class));
+
             }
         });
 //        binding.btnDelete.setOnClickListener(new View.OnClickListener() {
