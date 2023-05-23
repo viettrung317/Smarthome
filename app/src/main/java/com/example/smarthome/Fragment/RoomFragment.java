@@ -9,6 +9,7 @@ import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
+import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
@@ -28,6 +29,7 @@ import com.example.smarthome.Model.DataAdd;
 import com.example.smarthome.Model.Device;
 import com.example.smarthome.Model.Home;
 import com.example.smarthome.Model.Room;
+import com.example.smarthome.Model.Sensor;
 import com.example.smarthome.Model.User;
 import com.example.smarthome.R;
 import com.example.smarthome.ViewModel.UserViewModel;
@@ -67,10 +69,14 @@ public class RoomFragment extends Fragment {
     private DeviceAdapter deviceAdapter;
     private User user=new User();
     private Device device = new Device();
+    private Sensor sensor;
+    private List<Sensor> listSensor=new ArrayList<>();
     private int positiondv = -1;
     private List<Home> listHome=new ArrayList<>();
     private ListView lvAddinRoom;
+    private ListView lvAddSensor;
     private List<DataAdd> listDataRoom;
+    private List<DataAdd> listAddSensor;
     private DataAddAdapter dataAddAdapterRoom;
     private UserViewModel mViewModel; // Khai báo UserViewModel
 
@@ -115,6 +121,24 @@ public class RoomFragment extends Fragment {
         }else{
             swDoor.setVisibility(View.GONE);
         }
+        listSensor=roomla.getSensorList();
+        if(listSensor!=null) {
+            for (Sensor sensor : listSensor) {
+                if (sensor.getSensorName().equals("Nhiệt độ")) {
+                    txtTemperature.setText("Nhiệt độ : "+sensor.getSensorParameters().toString());
+                    break;
+                }
+            }
+            for (Sensor sensor : listSensor) {
+                if (sensor.getSensorName().equals("Độ ẩm")) {
+                    txtHumidity.setText("Độ ẩm : "+sensor.getSensorParameters().toString());
+                    break;
+                }
+            }
+        }else{
+            txtTemperature.setText("");
+            txtHumidity.setText("");
+        }
         deviceList = roomla.getListDevice();
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getContext());
         rcvListDevice.setLayoutManager(linearLayoutManager);
@@ -151,6 +175,26 @@ public class RoomFragment extends Fragment {
             }
         });
         rcvListDevice.setAdapter(deviceAdapter);
+        ItemTouchHelper itemTouchHelper=new ItemTouchHelper(new ItemTouchHelper.SimpleCallback(0,ItemTouchHelper.LEFT | ItemTouchHelper.RIGHT) {
+            @Override
+            public boolean onMove(@NonNull RecyclerView recyclerView, @NonNull RecyclerView.ViewHolder viewHolder, @NonNull RecyclerView.ViewHolder target) {
+                return false;
+            }
+
+            @Override
+            public void onSwiped(@NonNull RecyclerView.ViewHolder viewHolder, int direction) {
+                int psItem=viewHolder.getAdapterPosition();
+                deviceList.remove(psItem);
+                roomla.setListDevice(deviceList);
+                ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        deviceAdapter.notifyDataSetChanged();
+                    }
+                });
+            }
+        });
+        itemTouchHelper.attachToRecyclerView(rcvListDevice);
 
     }
 
@@ -179,6 +223,172 @@ public class RoomFragment extends Fragment {
                 lvAddinRoom.setVisibility(View.VISIBLE);
             }
         });
+        lvAddSensor.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                lvAddSensor.setVisibility(View.GONE);
+                if (roomla.getSensorList() != null) {
+                    listSensor = roomla.getSensorList();
+                } else {
+                    listSensor = new ArrayList<>();
+                }
+                boolean hasTemperature = false;
+                boolean hasHumidity = false;
+                boolean hasGas = false;
+                Sensor sTemperature=new Sensor();
+                Sensor sHumidity=new Sensor();
+                Sensor sGas=new Sensor();
+                for (Sensor sensor : listSensor) {
+                    if (sensor.getSensorName().equals("Nhiệt độ")) {
+                        hasTemperature = true;
+                        sTemperature=sensor;
+
+                    }
+                    if (sensor.getSensorName().equals("Độ ẩm")) {
+                        hasHumidity = true;
+                        sHumidity=sensor;
+                    }
+                    if (sensor.getSensorName().equals("Khí gas")) {
+                        hasGas = true;
+                        sGas=sensor;
+                    }
+                }
+                switch (position) {
+                    case 0:
+                        if (hasTemperature) {
+                            deleteTemperature(sTemperature);
+                        } else {
+                            addTemperature();
+                        }
+                        break;
+                    case 1:
+                        if (hasHumidity) {
+                            deleteHumidity(sHumidity);
+                        } else {
+                            addHumidity();
+                        }
+                        break;
+                    case 2:
+                        if (hasGas) {
+                            deleteGas(sGas);
+                        } else {
+                            addGas();
+                        }
+                        break;
+                }
+            }
+
+
+
+
+        private void addGas() {
+                if(roomla.getSensorList()!=null) {
+                    listSensor = roomla.getSensorList();
+                }else{
+                    listSensor=new ArrayList<>();
+                }
+                sensor=new Sensor();
+                sensor.setSensorName("Khí gas");
+                sensor.setSensorParameters(0.0);
+                listSensor.add(sensor);
+                roomla.setSensorList(listSensor);
+                ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            getAddSensor();
+                        }
+                    }
+                });
+            }
+
+            private void addHumidity() {
+                if(roomla.getSensorList()!=null) {
+                    listSensor = roomla.getSensorList();
+                }else{
+                    listSensor=new ArrayList<>();
+                }
+                sensor=new Sensor();
+                sensor.setSensorName("Độ ẩm");
+                sensor.setSensorParameters(0.0);
+                listSensor.add(sensor);
+                roomla.setSensorList(listSensor);
+                ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            txtHumidity.setText("Độ ẩm : "+sensor.getSensorParameters().toString());
+                            getAddSensor();
+                        }
+                    }
+                });
+            }
+            private void addTemperature() {
+                if(roomla.getSensorList()!=null) {
+                    listSensor = roomla.getSensorList();
+                }else{
+                    listSensor=new ArrayList<>();
+                }
+                sensor=new Sensor();
+                sensor.setSensorName("Nhiệt độ");
+                sensor.setSensorParameters(0.0);
+                listSensor.add(sensor);
+                roomla.setSensorList(listSensor);
+                ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            txtTemperature.setText("Nhiệt độ : "+sensor.getSensorParameters().toString());
+                            getAddSensor();
+                        }
+                    }
+                });
+            }
+
+            private void deleteTemperature(Sensor sensor1) {
+                listSensor=roomla.getSensorList();
+                listSensor.remove(sensor1);
+                roomla.setSensorList(listSensor);
+                ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            txtTemperature.setText("");
+                            getAddSensor();
+                        }
+                    }
+                });
+
+            }
+            private void deleteHumidity(Sensor sensor1) {
+                listSensor=roomla.getSensorList();
+                listSensor.remove(sensor1);
+                roomla.setSensorList(listSensor);
+                ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            txtHumidity.setText("");
+                            getAddSensor();
+                        }
+                    }
+                });
+            }
+            private void deleteGas(Sensor sensor1) {
+                listSensor=roomla.getSensorList();
+                listSensor.remove(sensor1);
+                roomla.setSensorList(listSensor);
+                ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                    @Override
+                    public void onComplete(@NonNull Task<Void> task) {
+                        if(task.isSuccessful()){
+                            getAddSensor();
+                        }
+                    }
+                });
+            }
+
+        });
         lvAddinRoom.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
@@ -193,6 +403,10 @@ public class RoomFragment extends Fragment {
                         break;
                     case 1:
                         openDialogaddDevice();
+                        break;
+                    case 2:
+                        lvAddinRoom.setVisibility(View.GONE);
+                        lvAddSensor.setVisibility(View.VISIBLE);
                         break;
                     case 3:
                         deleteRoom();
@@ -240,6 +454,13 @@ public class RoomFragment extends Fragment {
 
 
     }
+
+    private void getAddSensor() {
+        dataAddAdapterRoom = new DataAddAdapter((Activity) getContext(), R.layout.addlayout, getListAddSensor());
+        lvAddSensor.setAdapter(dataAddAdapterRoom);
+        dataAddAdapterRoom.notifyDataSetChanged();
+    }
+
     private void addDoor(Boolean statusDoor) {
         roomla.setDoor(statusDoor);
         ref.child(userUid).child("homeList").child("0").child("roomList").child(Integer.toString(mPosition)).updateChildren(roomla.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
@@ -263,6 +484,7 @@ public class RoomFragment extends Fragment {
         txtHumidity = (TextView) view.findViewById(R.id.txtHumidity);
         rcvListDevice = (RecyclerView) view.findViewById(R.id.rcvListDevice);
         lvAddinRoom = (ListView) view.findViewById(R.id.lvAddinRoom);
+        lvAddSensor=(ListView) view.findViewById(R.id.lvAddSensor);
         swDoor=(Switch) view.findViewById(R.id.swDoor);
 
 
@@ -281,6 +503,7 @@ public class RoomFragment extends Fragment {
                 roomList=mHome.getRoomList();
                 roomla = roomList.get(mPosition);
                 lvDataAddRoom();
+                getAddSensor();
                 setData();
                 setEvents();
             }
@@ -306,6 +529,45 @@ public class RoomFragment extends Fragment {
         listDataRoom.add(new DataAdd("Xóa phòng",R.drawable.ic_baseline_delete_24));
         return listDataRoom;
     }
+    private List<DataAdd> getListAddSensor() {
+        listAddSensor = new ArrayList<>();
+        if (roomla.getSensorList() != null) {
+            listSensor = roomla.getSensorList();
+        } else {
+            listSensor = new ArrayList<>();
+        }
+        boolean hasNhietDo = false;
+        boolean hasDoAm = false;
+        boolean hasKhiGas = false;
+        for (Sensor sensor : listSensor) {
+            if (sensor.getSensorName().equals("Nhiệt độ")) {
+                hasNhietDo = true;
+            }
+            if (sensor.getSensorName().equals("Độ ẩm")) {
+                hasDoAm = true;
+            }
+            if (sensor.getSensorName().equals("Khí gas")) {
+                hasKhiGas = true;
+            }
+        }
+        if (!hasNhietDo) {
+            listAddSensor.add(new DataAdd("Nhiệt độ", R.drawable.ic_baseline_device_thermostat_24));
+        } else {
+            listAddSensor.add(new DataAdd("Xóa Nhiệt độ", R.drawable.ic_baseline_delete_24));
+        }
+        if (!hasDoAm) {
+            listAddSensor.add(new DataAdd("Độ ẩm", R.drawable.ic_baseline_device_thermostat_24));
+        } else {
+            listAddSensor.add(new DataAdd("Xóa Độ ẩm", R.drawable.ic_baseline_delete_24));
+        }
+        if (!hasKhiGas) {
+            listAddSensor.add(new DataAdd("Khí gas", R.drawable.ic_baseline_device_thermostat_24));
+        } else {
+            listAddSensor.add(new DataAdd("Xóa Khí gas", R.drawable.ic_baseline_delete_24));
+        }
+        return listAddSensor;
+    }
+
 
     public void updateData(int positionRoom) {
         mPosition=positionRoom;
