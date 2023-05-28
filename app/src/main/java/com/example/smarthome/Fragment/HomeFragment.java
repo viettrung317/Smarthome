@@ -13,7 +13,6 @@ import android.os.Bundle;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.fragment.app.Fragment;
-import androidx.lifecycle.LiveData;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 import androidx.viewpager2.widget.CompositePageTransformer;
@@ -46,7 +45,6 @@ import com.example.smarthome.R;
 import com.example.smarthome.ViewModel.UserViewModel;
 import com.example.smarthome.databinding.FragmentHomeBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
@@ -202,7 +200,140 @@ public class HomeFragment extends Fragment {
                     case 3:
                         deleteHome();
                         break;
+                    case 4:
+                        if(mHome!=null){
+                            resetPassGateHome(mHome);
+                        }
+                        break;
                 }
+            }
+
+            private void resetPassGateHome(Home home) {
+                final Dialog dialog1=new Dialog(getContext());
+                dialog1.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                dialog1.setContentView(R.layout.opengatelayout);
+                Window window= dialog1.getWindow();
+                if(window==null){
+                    return;
+                }
+                window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,WindowManager.LayoutParams.WRAP_CONTENT);
+                window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                WindowManager.LayoutParams windowAttributes=window.getAttributes();
+                windowAttributes.gravity= Gravity.CENTER;
+                window.setAttributes(windowAttributes);
+
+                if(Gravity.BOTTOM== Gravity.CENTER){
+                    dialog1.setCancelable(true);
+                }
+                else{
+                    dialog1.setCancelable(false);
+                }
+                EditText txtPassOpenGate=dialog1.findViewById(R.id.txtPassOpenGate);
+                TextView txtError=dialog1.findViewById(R.id.txtError);
+                ProgressBar progressBar5=dialog1.findViewById(R.id.progressBar5);
+                Button btnCancelOpen=dialog1.findViewById(R.id.btnCancelOpen);
+                Button btnOpen=dialog1.findViewById(R.id.btnOpenGate);
+                btnCancelOpen.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog1.dismiss();
+                    }
+                });
+                btnOpen.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        String pass = txtPassOpenGate.getText().toString();
+                        if (TextUtils.isEmpty(pass)) {
+                            txtError.setVisibility(View.VISIBLE);
+                            txtError.setText("Vui lòng nhập mật khẩu !");
+                            txtPassOpenGate.requestFocus();
+                        } else {
+                            if (!pass.equals(home.getPassGateHome())) {
+                                txtError.setVisibility(View.VISIBLE);
+                                txtError.setText("Mật khẩu không chính xác !");
+                                txtPassOpenGate.setText("");
+                                txtPassOpenGate.requestFocus();
+                            } else {
+                                txtError.setVisibility(View.GONE);
+                                progressBar5.setVisibility(View.VISIBLE);
+                                dialog1.dismiss();
+                                openResetPassDialog(mHome);
+                            }
+                        }
+                    }
+
+                    private void openResetPassDialog(Home mHome) {
+                        final Dialog dialog2=new Dialog(getContext());
+                        dialog2.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                        dialog2.setContentView(R.layout.resetpassgatelayout);
+                        Window window= dialog2.getWindow();
+                        if(window==null){
+                            return;
+                        }
+                        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,WindowManager.LayoutParams.WRAP_CONTENT);
+                        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                        WindowManager.LayoutParams windowAttributes=window.getAttributes();
+                        windowAttributes.gravity= Gravity.CENTER;
+                        window.setAttributes(windowAttributes);
+
+                        if(Gravity.BOTTOM== Gravity.CENTER){
+                            dialog2.setCancelable(true);
+                        }
+                        else{
+                            dialog2.setCancelable(false);
+                        }
+                        EditText txtPassOpenGateNew=dialog2.findViewById(R.id.txtPassOpenGateNew);
+                        EditText txtPassOpenGateRe=dialog2.findViewById(R.id.txtPassOpenGateRe);
+                        TextView txtErrorRe=dialog2.findViewById(R.id.txtErrorRe);
+                        ProgressBar progressBar6=dialog2.findViewById(R.id.progressBar6);
+                        Button btnCancelRe=dialog2.findViewById(R.id.btnCancelRe);
+                        Button btnResetPassWord=dialog2.findViewById(R.id.btnResetPassWord);
+                        btnCancelRe.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                dialog2.dismiss();
+                            }
+                        });
+                        btnResetPassWord.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                String Newpass = txtPassOpenGateNew.getText().toString();
+                                String RePass = txtPassOpenGateRe.getText().toString();
+                                if (TextUtils.isEmpty(Newpass)) {
+                                    txtErrorRe.setVisibility(View.VISIBLE);
+                                    txtErrorRe.setText("Vui lòng nhập mật khẩu mới !");
+                                    txtPassOpenGateNew.requestFocus();
+                                } else if (TextUtils.isEmpty(RePass)) {
+                                    txtErrorRe.setVisibility(View.VISIBLE);
+                                    txtErrorRe.setText("Vui lòng xác nhận mật khẩu mới !");
+                                    txtPassOpenGateRe.requestFocus();
+                                } else {
+                                    if (!Newpass.equals(RePass)) {
+                                        txtErrorRe.setVisibility(View.VISIBLE);
+                                        txtErrorRe.setText("Mật khẩu xác thực không trùng khớp !");
+                                        txtPassOpenGateNew.setText("");
+                                        txtPassOpenGateRe.setText("");
+                                        txtPassOpenGateNew.requestFocus();
+                                    } else {
+                                        txtErrorRe.setVisibility(View.GONE);
+                                        progressBar6.setVisibility(View.VISIBLE);
+                                        mHome.setPassGateHome(RePass);
+                                        ref.child(userUid).child("homeList").child("0").updateChildren(mHome.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                            @Override
+                                            public void onComplete(@NonNull Task<Void> task) {
+                                                if (task.isSuccessful()) {
+                                                    dialog2.dismiss();
+                                                }
+                                            }
+                                        });
+                                    }
+                                }
+                            }
+                        });
+                        dialog2.show();
+                    }
+                });
+                dialog1.show();
             }
 
             private void deleteHome() {
@@ -366,6 +497,9 @@ public class HomeFragment extends Fragment {
             listData.add(new DataAdd("Thêm phòng",R.drawable.room_24));
             listData.add(new DataAdd("Thêm nhà",R.drawable.ic_baseline_home_24));
             listData.add(new DataAdd("Xóa nhà",R.drawable.ic_baseline_delete_24));
+            if(mHome.getStatusGate()!=null){
+                listData.add(new DataAdd("Đổi mật khẩu",R.drawable.ic_baseline_lock_reset_24));
+            }
         }else{
             listData.add(new DataAdd("Thêm nhà",R.drawable.ic_baseline_home_24));
         }

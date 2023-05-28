@@ -9,16 +9,14 @@ import java.util.Map;
 public class Sensor implements Serializable {
     private String sensorName;
     private Double sensorParameters;
-    private Boolean alarm;
     public Map<String, Boolean> stars = new HashMap<>();
 
     public Sensor() {
     }
 
-    public Sensor(String sensorName, Double sensorParameters,boolean alarm) {
+    public Sensor(String sensorName, Double sensorParameters) {
         this.sensorName = sensorName;
         this.sensorParameters = sensorParameters;
-        this.alarm=alarm;
     }
 
     public String getSensorName() {
@@ -38,20 +36,12 @@ public class Sensor implements Serializable {
     }
 
 
-    public Boolean getAlarm() {
-        return alarm;
-    }
-
-    public void setAlarm(Boolean alarm) {
-        this.alarm = alarm;
-    }
 
     @Exclude
     public Map<String, Object> toMap() {
         HashMap<String, Object> result = new HashMap<>();
         result.put("sensorName",sensorName);
         result.put("sensorParameters",sensorParameters);
-        result.put("alarm",alarm);
         result.put("stars", stars);
 
         return result;

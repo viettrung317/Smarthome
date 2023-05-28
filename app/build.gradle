@@ -51,7 +51,7 @@ dependencies {
     //import firebase_Storage
     implementation 'com.google.firebase:firebase-storage'
     implementation 'com.squareup.picasso:picasso:2.5.2'
-    implementation 'me.relex:circleindicator:2.1.6'
+    //implementation 'me.relex:circleindicator:2.1.6'
     def lifecycle_version = "2.5.1"
     def arch_version = "2.1.0"
 

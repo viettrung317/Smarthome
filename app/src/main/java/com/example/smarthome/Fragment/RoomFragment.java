@@ -125,13 +125,15 @@ public class RoomFragment extends Fragment {
         if(listSensor!=null) {
             for (Sensor sensor : listSensor) {
                 if (sensor.getSensorName().equals("Nhiệt độ")) {
-                    txtTemperature.setText("Nhiệt độ : "+sensor.getSensorParameters().toString());
+                    String format = getString(R.string.temperature);
+                    String temperatureText = String.format(format, sensor.getSensorParameters().toString());
+                    txtTemperature.setText(temperatureText);
                     break;
                 }
             }
             for (Sensor sensor : listSensor) {
                 if (sensor.getSensorName().equals("Độ ẩm")) {
-                    txtHumidity.setText("Độ ẩm : "+sensor.getSensorParameters().toString());
+                    txtHumidity.setText("Độ ẩm : "+sensor.getSensorParameters().toString()+" %");
                     break;
                 }
             }
@@ -317,7 +319,7 @@ public class RoomFragment extends Fragment {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if(task.isSuccessful()){
-                            txtHumidity.setText("Độ ẩm : "+sensor.getSensorParameters().toString());
+                            txtHumidity.setText("Độ ẩm : "+sensor.getSensorParameters().toString()+" %");
                             getAddSensor();
                         }
                     }
@@ -338,7 +340,9 @@ public class RoomFragment extends Fragment {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if(task.isSuccessful()){
-                            txtTemperature.setText("Nhiệt độ : "+sensor.getSensorParameters().toString());
+                            String format = getString(R.string.temperature);
+                            String temperatureText = String.format(format, sensor.getSensorParameters().toString());
+                            txtTemperature.setText(temperatureText);
                             getAddSensor();
                         }
                     }
