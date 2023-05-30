@@ -15,6 +15,7 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
 
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -24,13 +25,17 @@ import android.view.WindowManager;
 import android.widget.Button;
 import android.widget.DatePicker;
 import android.widget.EditText;
+import android.widget.ProgressBar;
 import android.widget.RadioButton;
 import android.widget.RadioGroup;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.example.smarthome.Account.LoginActivity;
+import com.example.smarthome.Account.Validator;
 import com.example.smarthome.Activity.EditAvatarMainActivity;
 import com.example.smarthome.MainActivity;
+import com.example.smarthome.Model.Home;
 import com.example.smarthome.Model.User;
 import com.example.smarthome.R;
 import com.example.smarthome.ViewModel.UserViewModel;
@@ -39,6 +44,8 @@ import com.example.smarthome.databinding.FragmentProfileBinding;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.android.gms.tasks.Task;
+import com.google.firebase.auth.AuthCredential;
+import com.google.firebase.auth.EmailAuthProvider;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
 import com.google.firebase.database.DatabaseError;
@@ -118,7 +125,162 @@ public class ProfileFragment extends Fragment {
         binding.btnResetPassWord.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
+                openResetPassWord();
+            }
 
+            private void openResetPassWord() {
+                final Dialog dialog1=new Dialog(getContext());
+                dialog1.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                dialog1.setContentView(R.layout.currentpasswordlayout);
+                Window window= dialog1.getWindow();
+                if(window==null){
+                    return;
+                }
+                window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,WindowManager.LayoutParams.WRAP_CONTENT);
+                window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                WindowManager.LayoutParams windowAttributes=window.getAttributes();
+                windowAttributes.gravity= Gravity.CENTER;
+                window.setAttributes(windowAttributes);
+
+                if(Gravity.BOTTOM== Gravity.CENTER){
+                    dialog1.setCancelable(true);
+                }
+                else{
+                    dialog1.setCancelable(false);
+                }
+                EditText txtCurrentPassWord=dialog1.findViewById(R.id.txtCurrentPassWord);
+                TextView txtErrorCurrent=dialog1.findViewById(R.id.txtErrorCurrent);
+                ProgressBar progressBar7=dialog1.findViewById(R.id.progressBar7);
+                Button btnCancelResetPass=dialog1.findViewById(R.id.btnCancelResetPass);
+                Button btnOpenNewPass=dialog1.findViewById(R.id.btnOpenNewPass);
+                btnCancelResetPass.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        dialog1.dismiss();
+                    }
+                });
+                btnOpenNewPass.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View view) {
+                        String currentpass = txtCurrentPassWord.getText().toString();
+                        if (TextUtils.isEmpty(currentpass)) {
+                            txtErrorCurrent.setVisibility(View.VISIBLE);
+                            txtErrorCurrent.setText("Vui lòng nhập mật khẩu !");
+                            txtCurrentPassWord.requestFocus();
+                        } else {
+                            // Tạo một đối tượng AuthCredential từ email và password hiện tại của người dùng
+                            AuthCredential credential = EmailAuthProvider.getCredential(fbuser.getEmail(), currentpass);
+                            // Yêu cầu người dùng xác thực mật khẩu hiện tại
+                            fbuser.reauthenticate(credential).addOnCompleteListener(new OnCompleteListener<Void>() {
+                                @Override
+                                public void onComplete(@NonNull Task<Void> task) {
+                                    if(task.isSuccessful()){
+                                        txtErrorCurrent.setVisibility(View.GONE);
+                                        progressBar7.setVisibility(View.VISIBLE);
+                                        dialog1.dismiss();
+                                        openResetNewPassDialog();
+                                    }
+                                    else{
+                                        txtErrorCurrent.setVisibility(View.VISIBLE);
+                                        txtErrorCurrent.setText("Mật khẩu không chính xác !");
+                                        txtCurrentPassWord.setText("");
+                                        txtCurrentPassWord.requestFocus();
+                                    }
+                                }
+                            });
+                        }
+                    }
+
+                    private void openResetNewPassDialog() {
+                        final Dialog dialog2=new Dialog(getContext());
+                        dialog2.requestWindowFeature(Window.FEATURE_NO_TITLE);
+                        dialog2.setContentView(R.layout.newpasswordlayout);
+                        Window window= dialog2.getWindow();
+                        if(window==null){
+                            return;
+                        }
+                        window.setLayout(WindowManager.LayoutParams.MATCH_PARENT,WindowManager.LayoutParams.WRAP_CONTENT);
+                        window.setBackgroundDrawable(new ColorDrawable(Color.TRANSPARENT));
+                        WindowManager.LayoutParams windowAttributes=window.getAttributes();
+                        windowAttributes.gravity= Gravity.CENTER;
+                        window.setAttributes(windowAttributes);
+
+                        if(Gravity.BOTTOM== Gravity.CENTER){
+                            dialog2.setCancelable(true);
+                        }
+                        else{
+                            dialog2.setCancelable(false);
+                        }
+                        EditText txtNewPassword=dialog2.findViewById(R.id.txtNewPassword);
+                        EditText txtNewPasswordRe=dialog2.findViewById(R.id.txtNewPasswordRe);
+                        TextView txtErrorNewPass=dialog2.findViewById(R.id.txtErrorNewPass);
+                        ProgressBar progressBar8=dialog2.findViewById(R.id.progressBar8);
+                        Button btnCancelResetNewPass=dialog2.findViewById(R.id.btnCancelResetNewPass);
+                        Button btnResetNewPassWord=dialog2.findViewById(R.id.btnResetNewPassWord);
+                        btnCancelResetNewPass.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                dialog2.dismiss();
+                            }
+                        });
+                        btnResetNewPassWord.setOnClickListener(new View.OnClickListener() {
+                            @Override
+                            public void onClick(View view) {
+                                String Newpass = txtNewPassword.getText().toString();
+                                String RePass = txtNewPasswordRe.getText().toString();
+                                Validator validator=new Validator();
+                                if (TextUtils.isEmpty(Newpass)) {
+                                    txtErrorNewPass.setVisibility(View.VISIBLE);
+                                    txtErrorNewPass.setText("Vui lòng nhập mật khẩu mới !");
+                                    txtNewPassword.requestFocus();
+                                } else if (TextUtils.isEmpty(RePass)) {
+                                    txtErrorNewPass.setVisibility(View.VISIBLE);
+                                    txtErrorNewPass.setText("Vui lòng xác nhận mật khẩu mới !");
+                                    txtNewPasswordRe.requestFocus();
+                                } else {
+                                    if(!validator.validatePass(Newpass)){
+                                        txtErrorNewPass.setVisibility(View.VISIBLE);
+                                        txtErrorNewPass.setText("Password must be at least 8 characters, with uppercase and special characters ! ");
+                                        txtNewPassword.setText("");
+                                        txtNewPasswordRe.setText("");
+                                        txtNewPassword.requestFocus();
+                                    }
+                                    else {
+                                        if (!Newpass.equals(RePass)) {
+                                            txtErrorNewPass.setVisibility(View.VISIBLE);
+                                            txtErrorNewPass.setText("Mật khẩu xác thực không trùng khớp !");
+                                            txtNewPassword.setText("");
+                                            txtNewPasswordRe.setText("");
+                                            txtNewPassword.requestFocus();
+                                        } else {
+                                            txtErrorNewPass.setVisibility(View.GONE);
+                                            progressBar8.setVisibility(View.VISIBLE);
+                                            // Xác thực thành công, tiến hành cập nhật mật khẩu mới
+                                            fbuser.updatePassword(Newpass)
+                                                    .addOnCompleteListener(new OnCompleteListener<Void>() {
+                                                        @Override
+                                                        public void onComplete(@NonNull Task<Void> task) {
+                                                            if (task.isSuccessful()) {
+                                                                Log.d("Error", "Cập nhật mật khẩu thành công!");
+                                                                dialog2.dismiss();
+                                                                mAuth.signOut();
+                                                                startActivity(new Intent(getActivity(), LoginActivity.class));
+
+                                                            } else {
+                                                                Log.d("Error", "Cập nhật mật khẩu thất bại!");
+                                                            }
+                                                        }
+                                                    });
+
+                                        }
+                                    }
+                                }
+                            }
+                        });
+                        dialog2.show();
+                    }
+                });
+                dialog1.show();
             }
         });
         binding.ibtnEditSdt.setOnClickListener(new View.OnClickListener() {

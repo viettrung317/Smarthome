@@ -30,8 +30,6 @@ import com.example.smarthome.Model.Room;
 import com.example.smarthome.Model.Sensor;
 import com.example.smarthome.Model.User;
 import com.example.smarthome.R;
-import com.example.smarthome.encodeanddecode.DeCode;
-import com.example.smarthome.encodeanddecode.EnCode;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
