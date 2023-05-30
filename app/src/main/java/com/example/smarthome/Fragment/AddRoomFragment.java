@@ -199,6 +199,14 @@ public class AddRoomFragment extends BottomSheetDialogFragment {
                 startActivityForResult(camera, REQUESTCODE_CAMERA);
             }
         });
+        txtSelectImgRoom.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_PICK);
+                intent.setType("image/*");
+                startActivityForResult(intent, REQUESTCODE_FOLDER);
+            }
+        });
         txtSaveAddRoom.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

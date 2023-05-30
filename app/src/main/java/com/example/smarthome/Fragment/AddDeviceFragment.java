@@ -190,6 +190,14 @@ public class AddDeviceFragment extends BottomSheetDialogFragment {
                 startActivityForResult(camera, REQUESTCODE_CAMERA);
             }
         });
+        txtSelectImgDevice.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_PICK);
+                intent.setType("image/*");
+                startActivityForResult(intent, REQUESTCODE_FOLDER);
+            }
+        });
         txtSaveAddDevice.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

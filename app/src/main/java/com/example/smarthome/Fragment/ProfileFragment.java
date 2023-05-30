@@ -105,16 +105,17 @@ public class ProfileFragment extends Fragment {
             @Override
             public void onClick(View view) {
                 FirebaseUser userFb=FirebaseAuth.getInstance().getCurrentUser();
-                ref.child(userUid).removeValue(new DatabaseReference.CompletionListener() {
-                    @Override
-                    public void onComplete(@Nullable DatabaseError error, @NonNull DatabaseReference ref) {
-                    }
-                });
                 userFb.delete().addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
                             Toast.makeText(getActivity(), "Đã xóa tài khoản !", Toast.LENGTH_SHORT).show();
+                            startActivity(new Intent(getActivity(), LoginActivity.class));
+                            ref.child(userUid).removeValue(new DatabaseReference.CompletionListener() {
+                                @Override
+                                public void onComplete(@Nullable DatabaseError error, @NonNull DatabaseReference ref) {
+                                }
+                            });
                         }
                     }
                 });

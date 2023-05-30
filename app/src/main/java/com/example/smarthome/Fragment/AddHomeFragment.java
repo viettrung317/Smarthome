@@ -190,6 +190,14 @@ public class AddHomeFragment extends BottomSheetDialogFragment {
                 startActivityForResult(camera, REQUESTCODE_CAMERA);
             }
         });
+        txtSelectImgHome.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(Intent.ACTION_PICK);
+                intent.setType("image/*");
+                startActivityForResult(intent, REQUESTCODE_FOLDER);
+            }
+        });
         txtSaveAddHome.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {

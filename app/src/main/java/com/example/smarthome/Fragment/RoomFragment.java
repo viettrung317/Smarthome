@@ -432,17 +432,19 @@ public class RoomFragment extends Fragment {
 
 
             private void deleteRoom() {
+                assert getFragmentManager() != null;
+                getFragmentManager().popBackStack();
                 roomList.remove(mPosition);
                 mHome.setRoomList(roomList);
                 ref.child(userUid).child("homeList").child("0").updateChildren(mHome.toMap()).addOnCompleteListener(new OnCompleteListener<Void>() {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if (task.isSuccessful()) {
-                            assert getFragmentManager() != null;
-                            getFragmentManager().popBackStack();
+
                         }
                     }
                 });
+
             }
 
             private void openDialogaddDevice() {
@@ -504,7 +506,9 @@ public class RoomFragment extends Fragment {
                 listHome=user.getHomeList();
                 mHome=listHome.get(0);
                 mPosition = getArguments().getInt("position");
-                roomList=mHome.getRoomList();
+                if(mHome.getRoomList()!=null) {
+                    roomList = mHome.getRoomList();
+                }
                 roomla = roomList.get(mPosition);
                 lvDataAddRoom();
                 getAddSensor();
