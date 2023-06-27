@@ -28,7 +28,7 @@ public class UserViewModel extends ViewModel {
     private User user=new User();
     private DatabaseReference databaseReference = FirebaseDatabase.getInstance().getReference("User");
 
-    public UserViewModel() {
+    public void LoadUser() {
         // Lắng nghe sự kiện khi có dữ liệu mới từ Firebase
         databaseReference.child(userUid).addValueEventListener(new ValueEventListener() {
             @Override

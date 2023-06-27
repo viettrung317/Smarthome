@@ -59,5 +59,7 @@ dependencies {
     implementation "androidx.lifecycle:lifecycle-viewmodel:$lifecycle_version"
     // LiveData
     implementation "androidx.lifecycle:lifecycle-livedata:$lifecycle_version"
+    // Cloud Messaging
+    implementation 'com.google.firebase:firebase-messaging:22.0.0'
 
 }

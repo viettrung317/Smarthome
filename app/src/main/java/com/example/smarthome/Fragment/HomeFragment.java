@@ -166,6 +166,7 @@ public class HomeFragment extends Fragment {
                 }
             }
         });
+        mViewModel.LoadUser();
 
     }
     private void addEvents() {

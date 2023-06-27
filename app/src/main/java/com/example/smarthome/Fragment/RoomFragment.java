@@ -1,6 +1,7 @@
 package com.example.smarthome.Fragment;
 
 import android.app.Activity;
+import android.graphics.Color;
 import android.os.Bundle;
 import java.util.*;
 
@@ -58,7 +59,7 @@ public class RoomFragment extends Fragment {
     }
 
     private ImageView imgBackRoom, imgAddDevice, imgRoomLayout1;
-    private TextView txtRoomName1, txtTemperature, txtHumidity;
+    private TextView txtRoomName1, txtTemperature, txtHumidity,nodeGas;
     private Switch swDoor;
     private int mPosition = 0;
     private Home mHome=new Home();
@@ -128,13 +129,17 @@ public class RoomFragment extends Fragment {
                     String format = getString(R.string.temperature);
                     String temperatureText = String.format(format, sensor.getSensorParameters().toString());
                     txtTemperature.setText(temperatureText);
-                    break;
-                }
-            }
-            for (Sensor sensor : listSensor) {
+                }else
                 if (sensor.getSensorName().equals("Độ ẩm")) {
-                    txtHumidity.setText("Độ ẩm : "+sensor.getSensorParameters().toString()+" %");
-                    break;
+                    txtHumidity.setText("Độ ẩm : " + sensor.getSensorParameters().toString() + " %");
+                }else
+                if (sensor.getSensorName().equals("Khí gas")) {
+                    nodeGas.setVisibility(View.VISIBLE);
+                    if(sensor.getSensorParameters()>100){
+                        nodeGas.setTextColor(Color.RED);
+                    }else{
+                        nodeGas.setTextColor(Color.rgb(76,175,80));
+                    }
                 }
             }
         }else{
@@ -386,6 +391,7 @@ public class RoomFragment extends Fragment {
                     @Override
                     public void onComplete(@NonNull Task<Void> task) {
                         if(task.isSuccessful()){
+                            nodeGas.setVisibility(View.GONE);
                             getAddSensor();
                         }
                     }
@@ -488,6 +494,7 @@ public class RoomFragment extends Fragment {
         txtRoomName1 = (TextView) view.findViewById(R.id.txtRoomName1);
         txtTemperature = (TextView) view.findViewById(R.id.txtTemperature);
         txtHumidity = (TextView) view.findViewById(R.id.txtHumidity);
+        nodeGas=(TextView) view.findViewById(R.id.nodeGas);
         rcvListDevice = (RecyclerView) view.findViewById(R.id.rcvListDevice);
         lvAddinRoom = (ListView) view.findViewById(R.id.lvAddinRoom);
         lvAddSensor=(ListView) view.findViewById(R.id.lvAddSensor);
@@ -516,6 +523,7 @@ public class RoomFragment extends Fragment {
                 setEvents();
             }
         });
+        mViewModel.LoadUser();
 
     }
 

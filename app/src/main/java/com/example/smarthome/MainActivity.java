@@ -46,37 +46,11 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.Isen
     private Toast mToast;
     private final FirebaseAuth mAuth=FirebaseAuth.getInstance();
     private BottomNavigationView bottomNavigationView;
-    private final FirebaseDatabase database=FirebaseDatabase.getInstance();
-    private final DatabaseReference ref=database.getReference("User");
-    private final FirebaseUser fbuser=mAuth.getCurrentUser();
-    private final String userUid;
-
-    {
-        assert fbuser != null;
-        userUid = fbuser.getUid();
-    }
-    private User user=new User();
-    private UserViewModel userViewModel;
-    private LiveData<User> userData;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
-        userViewModel= new ViewModelProvider(this).get(UserViewModel.class);
-        userViewModel.getMyData().observe(this, new Observer<User>() {
-            @Override
-            public void onChanged(User data) {
-                user=data;
-                assert user != null;
-                replaceFragment(new HomeFragment());
-            }
-        });
-        addControls();
-        addEvents();
-    }
-    public LiveData<User> getUser(){
-        return userData;
     }
 
     private void addEvents() {
@@ -124,6 +98,10 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.Isen
         if(firebaseUser==null){
             startActivity(new Intent(MainActivity.this, LoginActivity.class));
             finish();
+        }else{
+            replaceFragment(new HomeFragment());
+            addControls();
+            addEvents();
         }
     }
 
@@ -175,11 +153,4 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.Isen
         }
     }
 
-
-
-    @Override
-    protected void onStop() {
-        super.onStop();
-        userViewModel.getMyData().removeObservers(this);
-    }
 }

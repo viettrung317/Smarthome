@@ -477,6 +477,7 @@ public class ProfileFragment extends Fragment {
                 }
             }
         });
+        mViewModel.LoadUser();
 //        userData=mainActivity.getUser();
 //        userData.observe(getViewLifecycleOwner(), new Observer<User>() {
 //            @Override
