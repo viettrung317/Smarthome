@@ -2,6 +2,7 @@ package com.example.smarthome;
 
 import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.fragment.app.FragmentManager;
 import androidx.fragment.app.FragmentTransaction;
@@ -10,6 +11,8 @@ import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModel;
 import androidx.lifecycle.ViewModelProvider;
 
+import android.app.NotificationChannel;
+import android.app.NotificationManager;
 import android.content.Intent;
 import android.os.Build;
 import android.os.Bundle;
@@ -51,6 +54,8 @@ public class MainActivity extends AppCompatActivity implements HomeFragment.Isen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        Intent serviceIntent = new Intent(this, SensorLeakageService.class);
+        ContextCompat.startForegroundService(this, serviceIntent);
     }
 
     private void addEvents() {
