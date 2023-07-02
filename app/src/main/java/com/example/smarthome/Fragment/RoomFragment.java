@@ -209,13 +209,14 @@ public class RoomFragment extends Fragment{
             }
             else if(orders.equals("tắt")){
                 turnOffDevice(deviceName);
+            }else if(orders.equals("đọc")){
+                readSensor(deviceName);
             }
             else{
-                Toast.makeText(getContext(),"Yêu cầu không hợp lệ !",Toast.LENGTH_LONG).show();
+                speakText("Yêu cầu không hợp lệ !");
             }
         }
     }
-
     private void turnOnDevice(String deviceName) {
         String homeIndex = "0";
         String roomIndex =Integer.toString(mPosition);
@@ -308,6 +309,53 @@ public class RoomFragment extends Fragment{
                     }
                 } else {
                     String response = "Không có thiết bị " + deviceName + " trong phòng này";
+                    speakText(response);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Xử lý khi có lỗi xảy ra
+            }
+        });
+    }
+    private void readSensor(String deviceName) {
+        String homeIndex = "0";
+        String roomIndex =Integer.toString(mPosition);
+        final Double[] currentDeviceStatus = {0.0};
+
+        DatabaseReference devicesRef = FirebaseDatabase.getInstance().getReference()
+                .child("User").child(userUid).child("homeList").child(homeIndex)
+                .child("roomList").child(roomIndex).child("sensorList");
+
+        devicesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                boolean deviceFound = false;
+
+                for (DataSnapshot deviceSnapshot : snapshot.getChildren()) {
+                    String currentDeviceName = deviceSnapshot.child("sensorName").getValue(String.class);
+
+                    if (currentDeviceName != null && currentDeviceName.toLowerCase(Locale.ROOT).equalsIgnoreCase(deviceName)) {
+                        deviceFound = true;
+                        currentDeviceStatus[0] = deviceSnapshot.child("sensorParameters").getValue(Double.class);
+                        break;
+                    }
+                }
+
+                if (deviceFound) {
+                    if(deviceName.equals("nhiệt độ")){
+                        String response = deviceName + " trong phòng hiện tại là "+ Double.toString(currentDeviceStatus[0]) +"độ C";
+                        speakText(response);
+                    } else if(deviceName.equals("độ ẩm")){
+                        String response = deviceName + " trong phòng hiện tại là "+ Double.toString(currentDeviceStatus[0]) +"%";
+                        speakText(response);
+                    }else if(deviceName.equals("khí gas")){
+                        String response = "Nồng độ "+deviceName + " trong phòng hiện tại là "+ Double.toString(currentDeviceStatus[0]) +" miligam trên mét khối";
+                        speakText(response);
+                    }
+                } else {
+                    String response = "Không có cảm biến " + deviceName + " trong phòng này";
                     speakText(response);
                 }
             }
