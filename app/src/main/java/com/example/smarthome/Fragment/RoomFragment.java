@@ -1,12 +1,20 @@
 package com.example.smarthome.Fragment;
 
+import static android.app.Activity.RESULT_OK;
+
+import android.Manifest;
 import android.app.Activity;
+import android.content.ActivityNotFoundException;
+import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Color;
+import android.os.Build;
 import android.os.Bundle;
 import java.util.*;
 
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+import androidx.core.content.ContextCompat;
 import androidx.fragment.app.Fragment;
 import androidx.lifecycle.Observer;
 import androidx.lifecycle.ViewModelProvider;
@@ -14,6 +22,9 @@ import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 
+import android.speech.RecognizerIntent;
+import android.speech.tts.TextToSpeech;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -45,7 +56,7 @@ import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 import com.squareup.picasso.Picasso;
 
-public class RoomFragment extends Fragment {
+public class RoomFragment extends Fragment{
     public static final String TAG = RoomFragment.class.getName();
     private final FirebaseAuth mAuth = FirebaseAuth.getInstance();
     private final FirebaseDatabase db = FirebaseDatabase.getInstance();
@@ -58,7 +69,7 @@ public class RoomFragment extends Fragment {
         userUid = fbUser.getUid();
     }
 
-    private ImageView imgBackRoom, imgAddDevice, imgRoomLayout1;
+    private ImageView imgBackRoom, imgAddDevice, imgRoomLayout1,btnMic;
     private TextView txtRoomName1, txtTemperature, txtHumidity,nodeGas;
     private Switch swDoor;
     private int mPosition = 0;
@@ -80,6 +91,10 @@ public class RoomFragment extends Fragment {
     private List<DataAdd> listAddSensor;
     private DataAddAdapter dataAddAdapterRoom;
     private UserViewModel mViewModel; // Khai báo UserViewModel
+    private TextToSpeech textToSpeech;//Text-to-Speech (TTS)
+    private static final int REQUEST_CODE_SPEECH_INPUT = 1;
+    private static final int PERMISSION_REQUEST_CODE = 1;
+    private boolean isPermissionGranted = false;
 
 
     public RoomFragment() {
@@ -96,9 +111,216 @@ public class RoomFragment extends Fragment {
     @Override
     public void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        ViewModelProvider viewModelProvider=new ViewModelProvider(requireActivity());
+        ViewModelProvider viewModelProvider = new ViewModelProvider(requireActivity());
         mViewModel = viewModelProvider.get(UserViewModel.class);
+
+        // Kiểm tra quyền microphone
+        if (ContextCompat.checkSelfPermission(requireContext(), Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            // Nếu quyền chưa được cấp, yêu cầu người dùng cấp quyền
+            requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+        } else {
+            // Quyền đã được cấp
+            isPermissionGranted = true;
+        }
     }
+
+    // Kiểm tra đã cấp quyền microphone chưa
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        if (requestCode == PERMISSION_REQUEST_CODE) {
+            if (grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
+                // Quyền đã được cấp
+                isPermissionGranted = true;
+            } else {
+                // Quyền bị từ chối
+                isPermissionGranted = false;
+            }
+        }
+    }
+
+    // Phương thức để phát âm thanh từ văn bản
+    private void speakText(String text) {
+        // Khởi tạo Text-to-Speech (TTS)
+        textToSpeech = new TextToSpeech(getContext(), new TextToSpeech.OnInitListener() {
+            @Override
+            public void onInit(int status) {
+                if (status == TextToSpeech.SUCCESS) {
+                    {
+                        int result = textToSpeech.setLanguage(new Locale("vi_VN"));
+                        if (result == TextToSpeech.LANG_MISSING_DATA || result == TextToSpeech.LANG_NOT_SUPPORTED) {
+                            Toast.makeText(getContext(), "Language not supported", Toast.LENGTH_LONG).show();
+                        } else {
+                            textToSpeech.setSpeechRate(1.5F);
+                            String utteranceId = UUID.randomUUID().toString();
+                            textToSpeech.setOnUtteranceCompletedListener(new TextToSpeech.OnUtteranceCompletedListener() {
+                                @Override
+                                public void onUtteranceCompleted(String utteranceId) {
+                                    // Khi hoàn thành phát âm thanh, hiển thị Toast
+                                    getActivity().runOnUiThread(new Runnable() {
+                                        @Override
+                                        public void run() {
+                                            Toast.makeText(getContext(), text, Toast.LENGTH_LONG).show();
+                                        }
+                                    });
+                                }
+                            });
+                            // Phát âm thanh văn bản
+                            textToSpeech.speak(text, TextToSpeech.QUEUE_FLUSH, null);
+                        }
+                    }
+                } else {
+                    Toast.makeText(getContext(), "TextToSpeech initialization failed", Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+    }
+
+
+    // Bắt đầu quá trình nhận dạng giọng nói
+    private void startSpeechToText() {
+        if (isPermissionGranted) {
+            Intent intent = new Intent(RecognizerIntent.ACTION_RECOGNIZE_SPEECH);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE_MODEL, RecognizerIntent.LANGUAGE_MODEL_FREE_FORM);
+            intent.putExtra(RecognizerIntent.EXTRA_LANGUAGE, Locale.getDefault());
+            intent.putExtra(RecognizerIntent.EXTRA_PROMPT, "Hãy nói mệnh lệnh...");
+
+            try {
+                startActivityForResult(intent, REQUEST_CODE_SPEECH_INPUT);
+            } catch (ActivityNotFoundException e) {
+                Toast.makeText(getActivity(), "Thiết bị của bạn không hỗ trợ Speech-to-Text", Toast.LENGTH_SHORT).show();
+            }
+        } else {
+            Toast.makeText(getActivity(), "Vui lòng cấp quyền microphone để sử dụng tính năng này", Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    @Override
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+
+        if (requestCode == REQUEST_CODE_SPEECH_INPUT && resultCode == RESULT_OK && data != null) {
+            ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
+            String spokenText = result.get(0);
+            String orders=spokenText.substring(0,3).trim();
+            String deviceName=spokenText.substring(4).trim();
+            // Xử lý yêu cầu dựa trên văn bản nhận dạng được
+            if(orders.equals("bật")) {
+                turnOnDevice(deviceName);
+            }
+            else if(orders.equals("tắt")){
+                turnOffDevice(deviceName);
+            }
+            else{
+                Toast.makeText(getContext(),"Yêu cầu không hợp lệ !",Toast.LENGTH_LONG).show();
+            }
+        }
+    }
+
+    private void turnOnDevice(String deviceName) {
+        String homeIndex = "0";
+        String roomIndex =Integer.toString(mPosition);
+
+        DatabaseReference devicesRef = FirebaseDatabase.getInstance().getReference()
+                .child("User").child(userUid).child("homeList").child(homeIndex)
+                .child("roomList").child(roomIndex).child("listDevice");
+
+        devicesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                boolean deviceFound = false;
+                boolean deviceAlreadyOn = false;
+
+                for (DataSnapshot deviceSnapshot : snapshot.getChildren()) {
+                    String currentDeviceName = deviceSnapshot.child("deviceName").getValue(String.class);
+                    Boolean currentDeviceStatus = deviceSnapshot.child("status").getValue(Boolean.class);
+
+                    if (currentDeviceName != null && currentDeviceName.equalsIgnoreCase(deviceName)) {
+                        deviceFound = true;
+
+                        if (currentDeviceStatus != null && currentDeviceStatus) {
+                            deviceAlreadyOn = true;
+                            break;
+                        }
+
+                        deviceSnapshot.getRef().child("status").setValue(true);
+                        break;
+                    }
+                }
+
+                if (deviceFound) {
+                    if (deviceAlreadyOn) {
+                        String response = "Thiết bị " + deviceName + " đang bật";
+                        speakText(response);
+                    } else {
+                        String response = "Đã bật " + deviceName;
+                        speakText(response);
+                    }
+                } else {
+                    String response = "Không có thiết bị " + deviceName + " trong phòng này";
+                    speakText(response);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Xử lý khi có lỗi xảy ra
+            }
+        });
+    }
+    private void turnOffDevice(String deviceName) {
+        String homeIndex = "0";
+        String roomIndex =Integer.toString(mPosition);
+
+        DatabaseReference devicesRef = FirebaseDatabase.getInstance().getReference()
+                .child("User").child(userUid).child("homeList").child(homeIndex)
+                .child("roomList").child(roomIndex).child("listDevice");
+
+        devicesRef.addListenerForSingleValueEvent(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                boolean deviceFound = false;
+                boolean deviceAlreadyOff = false;
+
+                for (DataSnapshot deviceSnapshot : snapshot.getChildren()) {
+                    String currentDeviceName = deviceSnapshot.child("deviceName").getValue(String.class);
+                    Boolean currentDeviceStatus = deviceSnapshot.child("status").getValue(Boolean.class);
+
+                    if (currentDeviceName != null && currentDeviceName.equalsIgnoreCase(deviceName)) {
+                        deviceFound = true;
+
+                        if (currentDeviceStatus != null && !currentDeviceStatus) {
+                            deviceAlreadyOff = true;
+                            break;
+                        }
+
+                        deviceSnapshot.getRef().child("status").setValue(false);
+                        break;
+                    }
+                }
+
+                if (deviceFound) {
+                    if (deviceAlreadyOff) {
+                        String response = "Thiết bị " + deviceName + " đang tắt";
+                        speakText(response);
+                    } else {
+                        String response = "Đã tắt " + deviceName;
+                        speakText(response);
+                    }
+                } else {
+                    String response = "Không có thiết bị " + deviceName + " trong phòng này";
+                    speakText(response);
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Xử lý khi có lỗi xảy ra
+            }
+        });
+    }
+
+
+
 
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
@@ -135,7 +357,7 @@ public class RoomFragment extends Fragment {
                 }else
                 if (sensor.getSensorName().equals("Khí gas")) {
                     nodeGas.setVisibility(View.VISIBLE);
-                    if(sensor.getSensorParameters()>100){
+                    if(sensor.getSensorParameters()>400){
                         nodeGas.setTextColor(Color.RED);
                     }else{
                         nodeGas.setTextColor(Color.rgb(76,175,80));
@@ -206,6 +428,19 @@ public class RoomFragment extends Fragment {
     }
 
     private void setEvents() {
+        btnMic.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(isPermissionGranted){
+                    startSpeechToText();
+                }
+                else{
+                    // Quyền chưa được cấp, hiển thị thông báo hoặc yêu cầu người dùng cấp quyền
+                    Toast.makeText(requireContext(), "Vui lòng cấp quyền sử dụng microphone", Toast.LENGTH_SHORT).show();
+                    requestPermissions(new String[]{Manifest.permission.RECORD_AUDIO}, PERMISSION_REQUEST_CODE);
+                }
+            }
+        });
         swDoor.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -499,6 +734,7 @@ public class RoomFragment extends Fragment {
         lvAddinRoom = (ListView) view.findViewById(R.id.lvAddinRoom);
         lvAddSensor=(ListView) view.findViewById(R.id.lvAddSensor);
         swDoor=(Switch) view.findViewById(R.id.swDoor);
+        btnMic=(ImageView) view.findViewById(R.id.btnMic);
 
 
     }
@@ -588,5 +824,14 @@ public class RoomFragment extends Fragment {
     public void updateData(int positionRoom) {
         mPosition=positionRoom;
 
+    }
+    @Override
+    public void onDestroy() {
+        super.onDestroy();
+        // Giải phóng tài nguyên của TextToSpeech khi Fragment bị hủy
+        if (textToSpeech != null) {
+            textToSpeech.stop();
+            textToSpeech.shutdown();
+        }
     }
 }

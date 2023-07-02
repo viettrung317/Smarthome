@@ -105,7 +105,7 @@ public class SensorLeakageService extends Service {
 
                 // Duyệt qua danh sách cảm biến và kiểm tra rò rỉ khí gas
                 for (Sensor sensor : sensorList) {
-                    if (sensor.getSensorName().equals("Khí gas") && sensor.getSensorParameters() > 200) {
+                    if (sensor.getSensorName().equals("Khí gas") && sensor.getSensorParameters() > 400) {
                         isLeakageDetected = true;
                         break;
                     }
