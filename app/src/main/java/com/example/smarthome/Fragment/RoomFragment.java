@@ -200,7 +200,7 @@ public class RoomFragment extends Fragment{
 
         if (requestCode == REQUEST_CODE_SPEECH_INPUT && resultCode == RESULT_OK && data != null) {
             ArrayList<String> result = data.getStringArrayListExtra(RecognizerIntent.EXTRA_RESULTS);
-            String spokenText = result.get(0);
+            String spokenText = result.get(0).toLowerCase();
             String orders=spokenText.substring(0,3).trim();
             String deviceName=spokenText.substring(4).trim();
             // Xử lý yêu cầu dựa trên văn bản nhận dạng được
